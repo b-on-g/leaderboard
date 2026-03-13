@@ -1,0 +1,24 @@
+$bog_leaderboard $mol_page
+	title \Leaderboard
+	plugins /
+		<= Theme $mol_theme_auto
+	tools /
+		<= Lights $mol_lights_toggle
+	body /
+		<= Score_input $mol_number
+			hint \Your score
+			value? <=> my_score? 0
+		<= Board $mol_list
+			rows <= board_rows /
+
+$bog_leaderboard_row $mol_view
+	sub /
+		<= Place $mol_view
+			sub /
+				<= place \
+		<= Name $mol_view
+			sub /
+				<= name \
+		<= Score $mol_view
+			sub /
+				<= score \
