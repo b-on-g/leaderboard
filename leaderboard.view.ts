@@ -1,6 +1,6 @@
 namespace $.$$ {
 
-	/** Leaderboard entry in the shared Land */
+	/** Leaderboard entry */
 	class $bog_leaderboard_entry extends $giper_baza_dict.with({
 		Score: $giper_baza_atom_real,
 		Name: $giper_baza_atom_text,
@@ -8,25 +8,42 @@ namespace $.$$ {
 
 	export class $bog_leaderboard extends $.$bog_leaderboard {
 
-		/** Home Land of current user */
+		/** Land link from URL */
+		@ $mol_mem
+		land_link( next?: string | null ) {
+			return this.$.$mol_state_arg.value( 'land', next ) ?? ''
+		}
+
+		/** Shared Land for the leaderboard */
 		@ $mol_mem
 		land() {
-			return this.$.$giper_baza_glob.home().land()
+			const link = this.land_link()
+			if( !link ) return null
+			return this.$.$giper_baza_glob.Land( new $giper_baza_link( link ) )
 		}
 
-		/** All entries as dict (lord_str -> entry) */
+		/** Create a new shared land and put its link in URL */
+		@ $mol_action
+		land_create() {
+			const land = this.$.$giper_baza_glob.land_grab([
+				[ null, $giper_baza_rank_post( 'just' ) ],
+			])
+			this.land_link( land.link().str )
+			return land
+		}
+
+		/** All entries dict */
 		@ $mol_mem
 		entries_dict() {
-			return this.land().Data( $giper_baza_dict_to( $bog_leaderboard_entry ) )
+			const land = this.land() ?? this.land_create()
+			return land.Data( $giper_baza_dict_to( $bog_leaderboard_entry ) )
 		}
 
-		/** Current player's lord id as string key */
 		@ $mol_mem
 		my_lord_str() {
 			return this.$.$giper_baza_auth.current().pass().lord().str
 		}
 
-		/** Current player's entry via dict key */
 		@ $mol_mem
 		my_entry() {
 			return this.entries_dict().key( this.my_lord_str(), 'auto' )!
@@ -73,11 +90,6 @@ namespace $.$$ {
 				})
 				return row
 			} )
-		}
-
-		@ $mol_mem
-		auto() {
-			this.land().sync()
 		}
 
 	}
