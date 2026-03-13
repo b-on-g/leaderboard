@@ -23,7 +23,7 @@ namespace $.$$ {
 		/** Create a new shared land and put its link in URL */
 		@$mol_action
 		land_create() {
-			const land = this.$.$giper_baza_glob.land_grab([[null, $giper_baza_rank_post('just')]])
+			const land = this.$.$giper_baza_glob.land_grab([[null, $giper_baza_rank_post('slow')]])
 			this.land_link(land.link().str)
 			return land
 		}
