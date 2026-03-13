@@ -26496,9 +26496,7 @@ var $;
                 return this.$.$giper_baza_glob.Land(new $giper_baza_link(link));
             }
             land_create() {
-                const land = this.$.$giper_baza_glob.land_grab([
-                    [null, $giper_baza_rank_post('just')],
-                ]);
+                const land = this.$.$giper_baza_glob.land_grab([[null, $giper_baza_rank_post('slow')]]);
                 this.land_link(land.link().str);
                 return land;
             }
@@ -26523,13 +26521,15 @@ var $;
             board_sorted() {
                 const dict = this.entries_dict();
                 const keys = dict.keys();
-                const entries = keys.map(key => {
+                const entries = keys
+                    .map(key => {
                     const entry = dict.key(key);
                     return {
                         name: entry?.Name()?.val() ?? String(key).slice(0, 8),
                         score: entry?.Score()?.val() ?? 0,
                     };
-                }).filter(e => e.score !== 0);
+                })
+                    .filter(e => e.score !== 0);
                 entries.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
                 return entries;
             }
