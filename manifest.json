@@ -1,0 +1,10 @@
+{
+	"name": "bog_leaderboard",
+	"short_name": "bog_leaderboard",
+	"description": "",
+	"id": "bog_leaderboard",
+	"start_url": ".",
+	"display": "standalone",
+	"background_color": "#000000",
+	"theme_color": "#000000"
+}
