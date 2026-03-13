@@ -6308,7 +6308,22 @@ declare namespace $ {
 		,
 		ReturnType< $mol_number['value'] >
 	>
-	type $mol_list__rows_bog_leaderboard_3 = $mol_type_enforce<
+	type $bog_leaderboard_row__place_bog_leaderboard_3 = $mol_type_enforce<
+		ReturnType< $bog_leaderboard['row_place'] >
+		,
+		ReturnType< $bog_leaderboard_row['place'] >
+	>
+	type $bog_leaderboard_row__name_bog_leaderboard_4 = $mol_type_enforce<
+		ReturnType< $bog_leaderboard['row_name'] >
+		,
+		ReturnType< $bog_leaderboard_row['name'] >
+	>
+	type $bog_leaderboard_row__score_bog_leaderboard_5 = $mol_type_enforce<
+		ReturnType< $bog_leaderboard['row_score'] >
+		,
+		ReturnType< $bog_leaderboard_row['score'] >
+	>
+	type $mol_list__rows_bog_leaderboard_6 = $mol_type_enforce<
 		ReturnType< $bog_leaderboard['board_rows'] >
 		,
 		ReturnType< $mol_list['rows'] >
@@ -6318,6 +6333,10 @@ declare namespace $ {
 		Lights( ): $mol_lights_toggle
 		my_score( next?: number ): number
 		Score_input( ): $mol_number
+		row_place( id: any): string
+		row_name( id: any): string
+		row_score( id: any): string
+		Row( id: any): $bog_leaderboard_row
 		board_rows( ): readonly(any)[]
 		Board( ): $mol_list
 		title( ): string
@@ -6416,11 +6435,11 @@ declare namespace $.$$ {
         my_lord_str(): string;
         my_entry(): $bog_leaderboard_entry;
         my_score(next?: number): number;
-        board_sorted(): {
-            name: string;
-            score: number;
-        }[];
+        board_keys(): string[];
         board_rows(): $bog_leaderboard_row[];
+        row_place(key: string): string;
+        row_name(key: string): string;
+        row_score(key: string): string;
     }
     export {};
 }

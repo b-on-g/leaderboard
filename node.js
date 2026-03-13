@@ -7028,8 +7028,24 @@ var $;
 			(obj.value) = (next) => ((this.my_score(next)));
 			return obj;
 		}
+		row_place(id){
+			return "";
+		}
+		row_name(id){
+			return "";
+		}
+		row_score(id){
+			return "";
+		}
+		Row(id){
+			const obj = new this.$.$bog_leaderboard_row();
+			(obj.place) = () => ((this.row_place(id)));
+			(obj.name) = () => ((this.row_name(id)));
+			(obj.score) = () => ((this.row_score(id)));
+			return obj;
+		}
 		board_rows(){
-			return [];
+			return [(this.Row(id))];
 		}
 		Board(){
 			const obj = new this.$.$mol_list();
@@ -7053,6 +7069,7 @@ var $;
 	($mol_mem(($.$bog_leaderboard.prototype), "Lights"));
 	($mol_mem(($.$bog_leaderboard.prototype), "my_score"));
 	($mol_mem(($.$bog_leaderboard.prototype), "Score_input"));
+	($mol_mem_key(($.$bog_leaderboard.prototype), "Row"));
 	($mol_mem(($.$bog_leaderboard.prototype), "Board"));
 	($.$bog_leaderboard_row) = class $bog_leaderboard_row extends ($.$mol_view) {
 		place(){
@@ -15672,30 +15689,33 @@ var $;
                 }
                 return this.my_entry().Score()?.val() ?? 0;
             }
-            board_sorted() {
+            board_keys() {
                 const dict = this.entries_dict();
                 const keys = dict.keys();
-                const entries = keys
-                    .map(key => {
+                return keys
+                    .filter(key => {
                     const entry = dict.key(key);
-                    return {
-                        name: entry?.Name()?.val() ?? String(key).slice(0, 8),
-                        score: entry?.Score()?.val() ?? 0,
-                    };
+                    return (entry?.Score()?.val() ?? 0) !== 0;
                 })
-                    .filter(e => e.score !== 0);
-                entries.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-                return entries;
+                    .sort((a, b) => {
+                    const sa = dict.key(a)?.Score()?.val() ?? 0;
+                    const sb = dict.key(b)?.Score()?.val() ?? 0;
+                    return sb - sa;
+                });
             }
             board_rows() {
-                return this.board_sorted().map((entry, index) => {
-                    const row = $bog_leaderboard_row.make({
-                        place: () => `#${index + 1}`,
-                        name: () => entry.name,
-                        score: () => String(entry.score),
-                    });
-                    return row;
-                });
+                return this.board_keys().map(key => this.Row(key));
+            }
+            row_place(key) {
+                return `#${this.board_keys().indexOf(key) + 1}`;
+            }
+            row_name(key) {
+                const entry = this.entries_dict().key(key);
+                return entry?.Name()?.val() ?? key.slice(0, 8);
+            }
+            row_score(key) {
+                const entry = this.entries_dict().key(key);
+                return String(entry?.Score()?.val() ?? 0);
             }
         }
         __decorate([
@@ -15721,10 +15741,19 @@ var $;
         ], $bog_leaderboard.prototype, "my_score", null);
         __decorate([
             $mol_mem
-        ], $bog_leaderboard.prototype, "board_sorted", null);
+        ], $bog_leaderboard.prototype, "board_keys", null);
         __decorate([
             $mol_mem
         ], $bog_leaderboard.prototype, "board_rows", null);
+        __decorate([
+            $mol_mem_key
+        ], $bog_leaderboard.prototype, "row_place", null);
+        __decorate([
+            $mol_mem_key
+        ], $bog_leaderboard.prototype, "row_name", null);
+        __decorate([
+            $mol_mem_key
+        ], $bog_leaderboard.prototype, "row_score", null);
         $$.$bog_leaderboard = $bog_leaderboard;
     })($$ = $.$$ || ($.$$ = {}));
 })($ || ($ = {}));
@@ -15741,17 +15770,7 @@ var $;
             },
         });
         $mol_style_define($bog_leaderboard_row, {
-            display: 'flex',
-            gap: '.5rem',
-            padding: {
-                top: '.5rem',
-                bottom: '.5rem',
-                left: '1rem',
-                right: '1rem',
-            },
-            font: {
-                size: '1.25rem',
-            },
+            padding: $mol_gap.block,
             Place: {
                 minWidth: '3rem',
                 font: {

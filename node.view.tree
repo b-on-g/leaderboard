@@ -230,6 +230,10 @@ $bog_leaderboard $mol_page
 			value? <=> my_score? 0
 		<= Board $mol_list
 			rows <= board_rows /
+				<= Row* $bog_leaderboard_row
+					place <= row_place* \
+					name <= row_name* \
+					score <= row_score* \
 
 $bog_leaderboard_row $mol_view
 	sub /
