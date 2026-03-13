@@ -10,17 +10,7 @@ namespace $.$$ {
 
 	$mol_style_define( $bog_leaderboard_row, {
 
-		display: 'flex',
-		gap: '.5rem',
-		padding: {
-			top: '.5rem',
-			bottom: '.5rem',
-			left: '1rem',
-			right: '1rem',
-		},
-		font: {
-			size: '1.25rem',
-		},
+		padding: $mol_gap.block,
 
 		Place: {
 			minWidth: '3rem',

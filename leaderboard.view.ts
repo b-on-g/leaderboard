@@ -1,18 +1,15 @@
 namespace $.$$ {
-	/** Leaderboard entry */
 	class $bog_leaderboard_entry extends $giper_baza_dict.with({
 		Score: $giper_baza_atom_real,
 		Name: $giper_baza_atom_text,
 	}) {}
 
 	export class $bog_leaderboard extends $.$bog_leaderboard {
-		/** Land link from URL */
 		@$mol_mem
 		land_link(next?: string | null) {
 			return this.$.$mol_state_arg.value('land', next) ?? ''
 		}
 
-		/** Shared Land for the leaderboard */
 		@$mol_mem
 		land() {
 			const link = this.land_link()
@@ -20,7 +17,6 @@ namespace $.$$ {
 			return this.$.$giper_baza_glob.Land(new $giper_baza_link(link))
 		}
 
-		/** Create a new shared land and put its link in URL */
 		@$mol_action
 		land_create() {
 			const land = this.$.$giper_baza_glob.land_grab([[null, $giper_baza_rank_post('slow')]])
@@ -28,7 +24,6 @@ namespace $.$$ {
 			return land
 		}
 
-		/** All entries dict */
 		@$mol_mem
 		entries_dict() {
 			const land = this.land() ?? this.land_create()
@@ -52,40 +47,46 @@ namespace $.$$ {
 				entry.Score(null)!.val(next)
 				entry.Name(null)!.val(this.my_lord_str().slice(0, 8))
 			}
-
 			return this.my_entry().Score()?.val() ?? 0
 		}
 
 		@$mol_mem
-		board_sorted() {
+		board_keys() {
 			const dict = this.entries_dict()
-			const keys = dict.keys()
+			const keys = dict.keys() as string[]
 
-			const entries = keys
-				.map(key => {
-					const entry = dict.key(key as string)
-					return {
-						name: entry?.Name()?.val() ?? String(key).slice(0, 8),
-						score: entry?.Score()?.val() ?? 0,
-					}
+			return keys
+				.filter(key => {
+					const entry = dict.key(key)
+					return (entry?.Score()?.val() ?? 0) !== 0
 				})
-				.filter(e => e.score !== 0)
-
-			entries.sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-
-			return entries
+				.sort((a, b) => {
+					const sa = dict.key(a)?.Score()?.val() ?? 0
+					const sb = dict.key(b)?.Score()?.val() ?? 0
+					return sb - sa
+				})
 		}
 
 		@$mol_mem
 		board_rows() {
-			return this.board_sorted().map((entry, index) => {
-				const row = $bog_leaderboard_row.make({
-					place: () => `#${index + 1}`,
-					name: () => entry.name,
-					score: () => String(entry.score),
-				})
-				return row
-			})
+			return this.board_keys().map(key => this.Row(key))
+		}
+
+		@$mol_mem_key
+		row_place(key: string) {
+			return `#${this.board_keys().indexOf(key) + 1}`
+		}
+
+		@$mol_mem_key
+		row_name(key: string) {
+			const entry = this.entries_dict().key(key)
+			return entry?.Name()?.val() ?? key.slice(0, 8)
+		}
+
+		@$mol_mem_key
+		row_score(key: string) {
+			const entry = this.entries_dict().key(key)
+			return String(entry?.Score()?.val() ?? 0)
 		}
 	}
 }
