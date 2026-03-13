@@ -15631,11 +15631,25 @@ var $;
         }) {
         }
         class $bog_leaderboard extends $.$bog_leaderboard {
+            land_link(next) {
+                return this.$.$mol_state_arg.value('land', next) ?? '';
+            }
             land() {
-                return this.$.$giper_baza_glob.home().land();
+                const link = this.land_link();
+                if (!link)
+                    return null;
+                return this.$.$giper_baza_glob.Land(new $giper_baza_link(link));
+            }
+            land_create() {
+                const land = this.$.$giper_baza_glob.land_grab([
+                    [null, $giper_baza_rank_post('just')],
+                ]);
+                this.land_link(land.link().str);
+                return land;
             }
             entries_dict() {
-                return this.land().Data($giper_baza_dict_to($bog_leaderboard_entry));
+                const land = this.land() ?? this.land_create();
+                return land.Data($giper_baza_dict_to($bog_leaderboard_entry));
             }
             my_lord_str() {
                 return this.$.$giper_baza_auth.current().pass().lord().str;
@@ -15674,13 +15688,16 @@ var $;
                     return row;
                 });
             }
-            auto() {
-                this.land().sync();
-            }
         }
         __decorate([
             $mol_mem
+        ], $bog_leaderboard.prototype, "land_link", null);
+        __decorate([
+            $mol_mem
         ], $bog_leaderboard.prototype, "land", null);
+        __decorate([
+            $mol_action
+        ], $bog_leaderboard.prototype, "land_create", null);
         __decorate([
             $mol_mem
         ], $bog_leaderboard.prototype, "entries_dict", null);
@@ -15699,9 +15716,6 @@ var $;
         __decorate([
             $mol_mem
         ], $bog_leaderboard.prototype, "board_rows", null);
-        __decorate([
-            $mol_mem
-        ], $bog_leaderboard.prototype, "auto", null);
         $$.$bog_leaderboard = $bog_leaderboard;
     })($$ = $.$$ || ($.$$ = {}));
 })($ || ($ = {}));

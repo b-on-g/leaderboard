@@ -12255,7 +12255,9 @@ declare namespace $.$$ {
     class $bog_leaderboard_entry extends $bog_leaderboard_entry_base {
     }
     export class $bog_leaderboard extends $.$bog_leaderboard {
-        land(): $giper_baza_land;
+        land_link(next?: string | null): string;
+        land(): $giper_baza_land | null;
+        land_create(): $giper_baza_land;
         entries_dict(): {
             Value: typeof $bog_leaderboard_entry;
             key(key: $giper_baza_vary_type, auto?: any): $bog_leaderboard_entry;
@@ -12302,7 +12304,6 @@ declare namespace $.$$ {
             score: number;
         }[];
         board_rows(): $bog_leaderboard_row[];
-        auto(): void;
     }
     export {};
 }
