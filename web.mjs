@@ -11482,7 +11482,14 @@ var $;
                 if (unit instanceof $giper_baza_auth_pass)
                     continue;
                 if (this.lord_tier(unit.lord()) < unit.tier_min()) {
-                    return this.$.$mol_fail(new Error('Too low Tier'));
+                    this.$.$mol_log3_warn({
+                        message: 'Too low Tier',
+                        tier_min: unit.tier_min().toString(2),
+                        tier_actual: this.lord_tier(unit.lord()).toString(2),
+                        hint: 'Relax. Unit is skipped.',
+                        place: `${this}.diff_apply()`,
+                    });
+                    continue;
                 }
                 const lord_pass = this.lord_pass(unit.lord()) ?? passes.get(unit.lord().str);
                 if (!lord_pass)
@@ -11920,13 +11927,14 @@ var $;
                 const wide = Boolean(land.link().area().str);
                 return $mol_array_chunks(hashes, $giper_baza_unit_seal_limit).map(async (hashes) => {
                     const seal = $giper_baza_unit_seal.make(hashes.length, wide);
-                    seal.time_tick(this.faces.tick().time_tick);
                     seal.lord(auth.pass().lord());
                     seal.hash_list(hashes);
                     seal._land = this;
-                    const shot = seal.shot().mix(this.link());
                     do {
-                        seal.sign(await auth.signer().sign(shot));
+                        seal.time_tick(this.faces.tick().time_tick);
+                        const sens = seal.shot().mix(this.link());
+                        const sign = await auth.signer().sign(sens);
+                        seal.sign(sign);
                     } while (seal.rate_min() > rate);
                     return seal;
                 });
@@ -13051,9 +13059,8 @@ var $;
                 return this._hash_list = list;
             }
         }
-        _shot;
         shot() {
-            return this._shot ?? (this._shot = $giper_baza_link.hash_bin(new Uint8Array(this.buffer, this.byteOffset, this.byteLength - 64)));
+            return $giper_baza_link.hash_bin(new Uint8Array(this.buffer, this.byteOffset, this.byteLength - 64));
         }
         sign(next) {
             const buf = new Uint8Array(this.buffer, this.byteOffset + this.byteLength - 64, 64);
@@ -13062,7 +13069,7 @@ var $;
             return buf;
         }
         work() {
-            let int = this.uint32(this.byteLength - 64);
+            let int = new Uint32Array(this.hash().toBin().buffer)[0];
             let count = 0;
             while (int & 1) {
                 int >>>= 1;
@@ -16480,6 +16487,8 @@ var $;
                 }
                 catch (error) {
                     $mol_fail_log(error);
+                    if (error instanceof Error)
+                        return '💥' + error.message;
                     return '';
                 }
             }
@@ -17695,28 +17704,28 @@ var $;
     (function ($$) {
         class $giper_baza_link_chip extends $.$giper_baza_link_chip {
             subj() {
-                return this.$.$giper_baza_glob.Pawn(this.link(), $giper_baza_flex_subj);
+                const link = this.link();
+                if (!link.str)
+                    return null;
+                return this.$.$giper_baza_glob.Pawn(link, $giper_baza_flex_subj);
             }
             meta() {
-                const link = this.subj().meta();
+                const link = this.subj()?.meta();
                 if (!link)
                     return null;
                 return this.$.$giper_baza_glob.Pawn(link, $giper_baza_flex_meta);
             }
             icon() {
-                const link = this.link();
-                if (!link.str)
-                    return '💢';
-                return this.subj().icon() || '💠';
+                return this.subj()?.icon() || '💠';
             }
             title() {
                 const link = this.link();
                 if (!link.str)
                     return '______every______';
-                return this.subj().name() || link.str;
+                return this.subj()?.name() || link.str;
             }
             hint() {
-                return this.subj().hint();
+                return this.subj()?.hint() ?? '';
             }
             arg() {
                 return { [this.param()]: this.link().str };
@@ -17743,6 +17752,20 @@ var $;
 
 ;
 "use strict";
+
+;
+"use strict";
+var $;
+(function ($) {
+    var $$;
+    (function ($$) {
+        $mol_style_define($giper_baza_link_chip, {
+            font: {
+                family: 'monospace',
+            },
+        });
+    })($$ = $.$$ || ($.$$ = {}));
+})($ || ($ = {}));
 
 ;
 	($.$mol_stack) = class $mol_stack extends ($.$mol_view) {};
@@ -22742,7 +22765,7 @@ var $;
 			const obj = new this.$.$giper_baza_link_chip();
 			(obj.param) = () => ((this.link_param()));
 			(obj.link) = () => ((this.peer_link(id)));
-			(obj.sub) = () => ([(this.Gift_avatar(id)), ...(this.$.$giper_baza_link_chip.prototype.sub.call(obj))]);
+			(obj.sub) = () => ([...(this.$.$giper_baza_link_chip.prototype.sub.call(obj)), (this.Gift_avatar(id))]);
 			return obj;
 		}
 		Gift(id){
@@ -22796,7 +22819,10 @@ var $;
                     return this.gifts();
             }
             gifts() {
-                return [...this.land()._gift.keys()].reverse()
+                const land = this.land();
+                return [...land._gift.keys()]
+                    .filter(link => link !== land.link().lord().str)
+                    .reverse()
                     .map(link => this.Gift(new $giper_baza_link(link)));
             }
             peer_link(lord) {
@@ -22815,8 +22841,19 @@ var $;
                 return (rank & 0b1111).toString(16).toUpperCase();
             }
             add_commit() {
-                const auth = $giper_baza_auth_pass.from(this.add_key());
-                this.land().give(auth, $giper_baza_rank_read);
+                let key = this.add_key();
+                if (/^\w{8}_\w{8}$/.test(key)) {
+                    const link = new $giper_baza_link(key);
+                    const peer_land = this.$.$giper_baza_glob.Land(link);
+                    const pass = peer_land.lord_pass(link);
+                    if (!pass)
+                        return $mol_fail(new Error('No Pass for Lord'));
+                    this.land().give(pass, $giper_baza_rank_read);
+                }
+                else {
+                    const pass = $giper_baza_auth_pass.from(key);
+                    this.land().give(pass, $giper_baza_rank_read);
+                }
                 this.add_key('');
             }
             tier_options() {
@@ -22862,9 +22899,18 @@ var $;
     var $$;
     (function ($$) {
         $mol_style_define($giper_baza_land_rights, {
+            gap: $mol_gap.block,
             Gift: {
                 flex: {
                     wrap: 'wrap',
+                },
+                background: {
+                    color: $mol_theme.card,
+                },
+            },
+            Gift_name: {
+                flex: {
+                    grow: 1,
                 },
             },
             Gift_tier: {
@@ -23271,7 +23317,7 @@ var $;
             },
             Rights_page: {
                 flex: {
-                    basis: `30rem`,
+                    basis: `35rem`,
                 },
             },
         });
@@ -26451,6 +26497,7 @@ var $;
         class $giper_baza_app extends $.$giper_baza_app {
             auto() {
                 this.$.$giper_baza_glob.home();
+                return [];
             }
         }
         __decorate([
