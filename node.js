@@ -4780,7 +4780,7 @@ var $;
          * `Infinity` - fulfilled
          */
         static level() {
-            return -Math.log2(1 - this.portion());
+            return Math.floor(-Math.log2(1 - this.portion()));
         }
     }
     $.$mol_storage = $mol_storage;
@@ -12120,6 +12120,7 @@ var $;
             return this.post(seat ? units[seat - 1].self() : $giper_baza_link.hole, head, sand.self(), null, 'term');
         }
         broadcast() {
+            this.persisted(true);
             this.$.$giper_baza_glob.yard().lands_news.add(this.link().str);
         }
         sync() {
@@ -12161,6 +12162,8 @@ var $;
         loading() {
             $mol_wire_solid();
             let units = $mol_wire_sync(this.mine()).units_load();
+            if (units.length)
+                this.persisted(true);
             if (this.$.$giper_baza_log())
                 $mol_wire_sync(this.$).$mol_log3_rise({
                     place: this,
@@ -12249,6 +12252,8 @@ var $;
         }
         units_saving() {
             this.units_signing();
+            if (!this.persisted())
+                return;
             batch(this, this.units_unsaved, this.units_save);
         }
         async units_save(units) {
@@ -12266,6 +12271,20 @@ var $;
                     ins: units,
                     del: reaping,
                 });
+        }
+        persisted(next) {
+            $mol_wire_solid();
+            if (next !== undefined)
+                return next;
+            const level = $mol_wire_sync(this.$.$mol_storage).level();
+            if (level <= 0)
+                return true;
+            if (level > 6)
+                return false;
+            const crop = 8 - level;
+            const self = this.auth().pass().lord().toBin().at(-1);
+            const land = this.link().toBin().at(-1);
+            return (self >>> crop) === (land >>> crop);
         }
         async units_sign(units) {
             await Promise.resolve(); // prevent deps
@@ -12609,6 +12628,9 @@ var $;
         $mol_mem
     ], $giper_baza_land.prototype, "units_saving", null);
     __decorate([
+        $mol_mem
+    ], $giper_baza_land.prototype, "persisted", null);
+    __decorate([
         $mol_mem_key
     ], $giper_baza_land.prototype, "sand_load", null);
     __decorate([
@@ -12911,13 +12933,13 @@ var $;
                 data: () => this.data(),
             });
         }
-        derive(method, data) {
+        derive(method, data, type = this.type()) {
             return $mol_rest_message.make({
                 port: this.port,
                 method: $mol_const(method),
                 uri: () => this.uri(),
                 protocols: () => this.protocols(),
-                type: () => this.type(),
+                type: $mol_const(type),
                 origin: () => this.origin(),
                 data: $mol_const(data),
             });
@@ -13122,6 +13144,9 @@ var $;
 (function ($) {
     class $mol_rest_port_ws_std extends $mol_rest_port_ws {
         socket;
+        origin() {
+            return this.socket.url;
+        }
         send_nil() {
             if (this.socket.readyState !== this.socket.OPEN)
                 return;
@@ -13356,6 +13381,14 @@ var $;
                 Passives.set(port, passives = new Set);
             return passives;
         }
+        lands_alive() {
+            const ports = this.ports();
+            const actives = ports.flatMap(port => [...this.port_lands_active(port)]);
+            const passives = ports.flatMap(port => [...this.port_lands_passive(port)]);
+            const lands = new Set([...actives, ...passives]);
+            const glob = this.$.$giper_baza_glob;
+            return [...lands].map(id => glob.Land(new $giper_baza_link(id)));
+        }
         port_income(port, msg) {
             const pack = $mol_wire_sync($giper_baza_pack).from(msg);
             const parts = $mol_wire_sync(pack).parts();
@@ -13537,6 +13570,9 @@ var $;
     __decorate([
         $mol_mem_key
     ], $giper_baza_yard.prototype, "port_lands_active", null);
+    __decorate([
+        $mol_mem
+    ], $giper_baza_yard.prototype, "lands_alive", null);
     __decorate([
         $mol_action
     ], $giper_baza_yard.prototype, "port_income", null);
@@ -15504,6 +15540,7 @@ var $;
 (function ($) {
     class $giper_baza_app_stat extends $giper_baza_dict.with({
         Uptime: $giper_baza_atom_dura,
+        Masters: $giper_baza_atom.of($mol_schema_list($mol_schema_string)),
         Slaves: $giper_baza_atom.of($mol_schema_list($mol_schema_string)),
         /** User time in secs */
         Cpu_user: $giper_baza_stat_ranges,
@@ -15525,8 +15562,10 @@ var $;
         Port_slaves: $giper_baza_stat_ranges,
         /** Masters sockets count */
         Port_masters: $giper_baza_stat_ranges,
-        /** Active lands count */
-        Land_active: $giper_baza_stat_ranges,
+        /** Alive (in-memory) lands count */
+        Land_alive: $giper_baza_stat_ranges,
+        /** Ghost (non-persist) lands count */
+        Land_ghost: $giper_baza_stat_ranges,
         /** Unhandled errors */
         Errors: $giper_baza_stat_ranges,
     }) {
@@ -15542,6 +15581,9 @@ var $;
         }
         uptime(next) {
             return this.Uptime(next)?.val(next) ?? new $mol_time_duration(0);
+        }
+        masters(next) {
+            return this.Masters(next)?.val(next) ?? [];
         }
         slaves(next) {
             return this.Slaves(next)?.val(next) ?? [];
@@ -15565,6 +15607,7 @@ var $;
             this.$.$mol_state_time.now(1000);
             const yard = this.$.$giper_baza_glob.yard();
             this.uptime(new $mol_time_duration({ second: Math.floor(process.uptime()) }).normal);
+            this.masters([...yard.masters()].map(port => port.address() + ' ' + port.origin()));
             this.slaves([...yard.slaves].map(port => port.address() + ' ' + port.origin()));
             const res = process.resourceUsage();
             this.Cpu_user(null).tick_integral(Math.ceil(res.userCPUTime / 1e4)); // %
@@ -15577,10 +15620,11 @@ var $;
             this.Fs_free(null).tick_instant(Math.floor($mol_storage.free() / 1024 / 1024)); // MB
             const masters = yard.masters()?.length ?? 0;
             this.Port_masters(null).tick_instant(masters); // pct
-            const ports = yard.ports() ?? [];
-            this.Port_slaves(null).tick_instant(ports.length - masters); // pct
-            const lands = ports.reduce((sum, port) => sum + yard.port_lands_active(port).size, 0);
-            this.Land_active(null).tick_instant(lands); // pct
+            this.Port_slaves(null).tick_instant(yard.slaves.size); // pct
+            const lands_alive = yard.lands_alive();
+            const lands_persist = yard.lands_alive().filter(land => land.persisted());
+            this.Land_alive(null).tick_instant(lands_alive.length); // pct
+            this.Land_ghost(null).tick_instant(lands_alive.length - lands_persist.length); // pct
             this.Errors(null).tick_instant(0); // pct
         }
     }
@@ -15590,6 +15634,9 @@ var $;
     __decorate([
         $mol_mem
     ], $giper_baza_app_stat.prototype, "uptime", null);
+    __decorate([
+        $mol_mem
+    ], $giper_baza_app_stat.prototype, "masters", null);
     __decorate([
         $mol_mem
     ], $giper_baza_app_stat.prototype, "slaves", null);
@@ -16414,7 +16461,8 @@ var $;
                     setTimeout(() => sock.resume());
                     return;
                 }
-                const message = upgrade.derive('POST', data);
+                const type = typeof data === 'string' ? 'text/plain' : 'application/octet-stream';
+                const message = upgrade.derive('POST', data, type);
                 if (data.length !== 0) {
                     if (this.log())
                         this.$.$mol_log3_rise({
@@ -17086,6 +17134,8 @@ var $;
             return protocol;
         }
         POST(msg) {
+            if (msg.type() !== 'application/octet-stream')
+                return super.POST(msg);
             this._yard().port_income(msg.port, msg.bin());
         }
         CLOSE(msg) {
