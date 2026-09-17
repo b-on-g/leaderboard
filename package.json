@@ -173,6 +173,7 @@
     "$mol_locale",
     "$mol_number",
     "$mol_hotkey",
+    "$mol_hotkey2",
     "$mol_string",
     "$mol_icon_menu_down_outline",
     "$mol_icon_menu_down",
