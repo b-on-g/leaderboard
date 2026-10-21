@@ -11960,11 +11960,12 @@ var $;
             for (const gift of this._gift.values()) {
                 collect(gift);
                 if (gift.mate().str) {
-                    if (skip_faces.has(gift.lord().peer().str))
+                    if (skip_faces.has(gift.mate().peer().str))
                         continue;
                     const mate_pass = this.lord_pass(gift.mate());
-                    if (mate_pass)
-                        passes.add(mate_pass);
+                    if (!mate_pass)
+                        return $mol_fail(new Error('No pass for mate'));
+                    passes.add(mate_pass);
                 }
             }
             for (const kids of this._sand.values()) {
@@ -12696,8 +12697,7 @@ var $;
         }
         encrypted(next) {
             $mol_wire_solid();
-            if (!this._gift.size)
-                this.loading();
+            // if( !this._gift.size ) this.loading()
             const gift = this._gift.get(this.link().str);
             const prev = gift?.code_exists() ?? false;
             if (next === undefined)
@@ -13537,7 +13537,10 @@ var $;
                     graph.link(seal, nodes.get(seal.lord().str) ?? null, 0); // seal -> lord
                     graph.link(seal, null, 0); // seal -> every
                     for (const hash of seal.hash_list()) {
-                        graph.link(nodes.get(hash.str) ?? null, seal, 1); // unit => seal
+                        const node = nodes.get(hash.str);
+                        if (!node)
+                            continue;
+                        graph.link(node, seal, 1); // unit => seal
                     }
                 }
             });
@@ -21280,7 +21283,6 @@ var $;
 		}
 		View(){
 			const obj = new this.$.$mol_text_code();
-			(obj.attr) = () => ({...(this.$.$mol_text_code.prototype.attr.call(obj)), "inert": ""});
 			(obj.text) = () => ((this.value()));
 			(obj.render_visible_only) = () => (false);
 			(obj.row_numb) = (id) => ((this.row_numb(id)));
@@ -21479,7 +21481,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/textarea/textarea.view.css", "[mol_textarea] {\n\tflex: 1 0 auto;\n\tflex-direction: column;\n\tvertical-align: top;\n\tmin-height: max-content;\n\twhite-space: pre-wrap;\n\tword-break: break-word;\n\tborder-radius: var(--mol_gap_round);\n\tfont-family: monospace;\n\tposition: relative;\n\ttab-size: 4;\n}\n\n[mol_textarea_view] {\n\tpointer-events: none;\n\twhite-space: inherit;\n\tfont-family: inherit;\n\ttab-size: inherit;\n\tuser-select: none;\n}\n\n[mol_textarea_view_copy] {\n\tpointer-events: all;\n}\n\n[mol_textarea_clickable] > [mol_textarea_view] {\n\tpointer-events: all;\n\tuser-select: auto;\n}\n\n[mol_textarea_clickable] > [mol_textarea_edit] {\n\tuser-select: none;\n}\n\n[mol_textarea_edit] {\n\tfont-family: inherit;\n\tpadding: var(--mol_gap_text);\n\tcolor: transparent !important;\n\tcaret-color: var(--mol_theme_text);\n\tresize: none;\n\ttext-align: inherit;\n\twhite-space: inherit;\n\tborder-radius: inherit;\n\toverflow-anchor: none;\n\tposition: absolute;\n\theight: 100%;\n\twidth: 100%;\n\ttab-size: inherit;\n}\n\n[mol_textarea_sidebar_showed] [mol_textarea_edit] {\n\tleft: 1.75rem;\n\twidth: calc( 100% - 1.75rem );\n}\n\n[mol_textarea_edit]:hover + [mol_textarea_view] {\n\tz-index: var(--mol_layer_hover);\n}\n\n[mol_textarea_edit]:focus + [mol_textarea_view] {\n\tz-index: var(--mol_layer_focus);\n}\n");
+    $mol_style_attach("mol/textarea/textarea.view.css", "[mol_textarea] {\n\tflex: 1 0 auto;\n\tflex-direction: column;\n\tvertical-align: top;\n\tmin-height: max-content;\n\twhite-space: pre-wrap;\n\tword-break: break-word;\n\tborder-radius: var(--mol_gap_round);\n\tfont-family: monospace;\n\tposition: relative;\n\ttab-size: 4;\n}\n\n[mol_textarea_view] {\n    interactivity: inert;\n\twhite-space: inherit;\n\tfont-family: inherit;\n\ttab-size: inherit;\n}\n\n[mol_textarea_view_copy] {\n    interactivity: initial;\n}\n\n[mol_textarea_clickable] > [mol_textarea_view] {\n    interactivity: initial;\n}\n\n[mol_textarea_clickable] > [mol_textarea_edit] {\n    interactivity: inert;\n}\n\n[mol_textarea_edit] {\n\tfont-family: inherit;\n\tpadding: var(--mol_gap_text);\n\tcolor: transparent !important;\n\tcaret-color: var(--mol_theme_text);\n\tresize: none;\n\ttext-align: inherit;\n\twhite-space: inherit;\n\tborder-radius: inherit;\n\toverflow-anchor: none;\n\tposition: absolute;\n\theight: 100%;\n\twidth: 100%;\n\ttab-size: inherit;\n}\n\n[mol_textarea_sidebar_showed] [mol_textarea_edit] {\n\tleft: 1.75rem;\n\twidth: calc( 100% - 1.75rem );\n}\n\n[mol_textarea_edit]:hover + [mol_textarea_view] {\n\tz-index: var(--mol_layer_hover);\n}\n\n[mol_textarea_edit]:focus + [mol_textarea_view] {\n\tz-index: var(--mol_layer_focus);\n}\n");
 })($ || ($ = {}));
 
 ;

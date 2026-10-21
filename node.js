@@ -11831,11 +11831,12 @@ var $;
             for (const gift of this._gift.values()) {
                 collect(gift);
                 if (gift.mate().str) {
-                    if (skip_faces.has(gift.lord().peer().str))
+                    if (skip_faces.has(gift.mate().peer().str))
                         continue;
                     const mate_pass = this.lord_pass(gift.mate());
-                    if (mate_pass)
-                        passes.add(mate_pass);
+                    if (!mate_pass)
+                        return $mol_fail(new Error('No pass for mate'));
+                    passes.add(mate_pass);
                 }
             }
             for (const kids of this._sand.values()) {
@@ -12567,8 +12568,7 @@ var $;
         }
         encrypted(next) {
             $mol_wire_solid();
-            if (!this._gift.size)
-                this.loading();
+            // if( !this._gift.size ) this.loading()
             const gift = this._gift.get(this.link().str);
             const prev = gift?.code_exists() ?? false;
             if (next === undefined)
@@ -13789,7 +13789,10 @@ var $;
                     graph.link(seal, nodes.get(seal.lord().str) ?? null, 0); // seal -> lord
                     graph.link(seal, null, 0); // seal -> every
                     for (const hash of seal.hash_list()) {
-                        graph.link(nodes.get(hash.str) ?? null, seal, 1); // unit => seal
+                        const node = nodes.get(hash.str);
+                        if (!node)
+                            continue;
+                        graph.link(node, seal, 1); // unit => seal
                     }
                 }
             });
@@ -16429,6 +16432,9 @@ var $;
                     origin: msg.origin(),
                     remote: req.socket.remoteAddress + ':' + req.socket.remotePort
                 });
+            if (Number(req.headers['content-length']) > this.message_limit) {
+                return port.send_code($mol_rest_code["Request Entity Too Large"]);
+            }
             $mol_wire_sync(res).setHeader('Access-Control-Allow-Origin', '*');
             $mol_wire_sync(res).setHeader('Access-Control-Allow-Methods', '*');
             $mol_wire_sync(res).setHeader('Access-Control-Allow-Headers', '*');
@@ -16528,7 +16534,7 @@ var $;
         }
         _ws_income_chunks = new WeakMap;
         _ws_income_frames = new WeakMap;
-        ws_message_size_max = 64 * 1024 * 1024; // 64MiB
+        message_limit = 16 * 1024 * 1024; // 16MiB
         async ws_income(chunk, upgrade, sock) {
             sock.pause();
             try {
@@ -16554,10 +16560,10 @@ var $;
                 for (const frame of frames) {
                     total_size += typeof frame === 'string' ? frame.length : frame.byteLength;
                 }
-                if (total_size > this.ws_message_size_max)
+                if (total_size > this.message_limit)
                     throw new Error('WebSocket message too large', { cause: {
                             size: total_size,
-                            limit: this.ws_message_size_max,
+                            limit: this.message_limit,
                         } });
                 const msg_size = header_size + frame_size;
                 const partial_size = chunks.reduce((sum, buf) => sum + buf.byteLength, 0);
@@ -17269,6 +17275,7 @@ var $;
             if (!link)
                 return msg.port.send_code(400);
             const land = this.$.$giper_baza_glob.Land(link.land());
+            land.loading();
             if (land.encrypted())
                 return msg.port.send_code(403);
             const file = land.Pawn($giper_baza_file).Head(link.head());
