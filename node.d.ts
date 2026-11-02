@@ -1901,6 +1901,12 @@ declare namespace $.$$ {
 }
 
 declare namespace $ {
+    class $mol_media extends $mol_object2 {
+        static match(query: string, next?: boolean): boolean;
+    }
+}
+
+declare namespace $ {
     /**
      * Decorates method to fiber to ensure it is executed only once inside other fiber from [mol_wire](../wire/README.md)
      * @see https://mol.hyoo.ru/#!section=docs/=1fcpsq_1wh0h2
@@ -1932,12 +1938,6 @@ declare namespace $ {
         value(key: string, next?: string): string | null;
         sub(postfix: string): $mol_state_arg;
         link(next: Record<string, string | null>): string;
-    }
-}
-
-declare namespace $ {
-    class $mol_media extends $mol_object2 {
-        static match(query: string, next?: boolean): boolean;
     }
 }
 
@@ -3519,38 +3519,27 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    /** @deprecated Use $mol_crypto2_nonce */
-    let $mol_crypto_salt: typeof $mol_crypto2_nonce;
-}
-
-declare namespace $ {
     type BufferSource = ArrayBufferView<ArrayBuffer> | ArrayBuffer;
-    /** Symmetric cipher with shortest payload. */
-    export class $mol_crypto_sacred extends $mol_buffer {
-        /** Key size in bytes. */
+    /** Symmetric AES-CTR secret. */
+    export class $mol_crypto2_secret extends $mol_buffer {
         static size: 16;
         /** Makes new random secret. */
-        static make(): $mol_crypto_sacred;
-        /** Makes from string of buffer view. */
+        static make(): $mol_crypto2_secret;
+        /** Makes from string or buffer view. */
         static from<This extends typeof $mol_buffer>(this: This, serial: string | ArrayBufferView<ArrayBuffer>): InstanceType<This>;
-        static from_native(native: CryptoKey): Promise<$mol_crypto_sacred>;
-        constructor(buffer: ArrayBuffer, byteOffset?: number, byteLength?: number);
+        static from_native(native: CryptoKey): Promise<$mol_crypto2_secret>;
         toString(): string;
         _native: undefined | CryptoKey & {
             type: 'secret';
         };
-        /** Native crypto secret */
+        /** Native crypto secret. */
         native(): Promise<CryptoKey & {
             type: "secret";
         }>;
-        /** Encrypt any binary message. 16n bytes */
-        encrypt(open: BufferSource, salt: BufferSource): Promise<Uint8Array<ArrayBuffer>>;
-        /** Decrypt any binary message. */
-        decrypt(closed: BufferSource, salt: BufferSource): Promise<Uint8Array<ArrayBuffer>>;
-        /** Encrypts 0xFF prefixed buffer. 16 bytes */
-        close(opened: DataView<ArrayBuffer>, salt: BufferSource): Promise<Uint8Array<ArrayBuffer>>;
-        /** Decrypts 0xFF prefixed buffer. 16 bytes */
-        open(closed: Uint8Array<ArrayBuffer>, salt: BufferSource): Promise<Uint8Array<ArrayBuffer>>;
+        /** Encrypts data without changing its length. */
+        encrypt(open: BufferSource, nonce: BufferSource): Promise<Uint8Array<ArrayBuffer>>;
+        /** Decrypts data without changing its length. */
+        decrypt(closed: BufferSource, nonce: BufferSource): Promise<Uint8Array<ArrayBuffer>>;
     }
     export {};
 }
@@ -3570,7 +3559,7 @@ declare namespace $ {
         /** Returns Socket from this Chipher. */
         socket(): $mol_crypto2_socket;
         /** Makes shared secret for combination of Chiper and Socket. */
-        secret(pub: $mol_crypto2_socket): Promise<$mol_crypto_sacred>;
+        secret(pub: $mol_crypto2_socket): Promise<$mol_crypto2_secret>;
     }
 }
 
@@ -3613,7 +3602,7 @@ declare namespace $ {
         static grab(): $giper_baza_auth;
         static _generate(): Promise<$giper_baza_auth>;
         pass(): $giper_baza_auth_pass;
-        secret_mutual(pass: $giper_baza_auth_pass): $mol_crypto_sacred;
+        secret_mutual(pass: $giper_baza_auth_pass): $mol_crypto2_secret;
         [$mol_dev_format_head](): any[];
     }
 }
@@ -4359,7 +4348,7 @@ declare namespace $ {
         sand_open(sand: $giper_baza_unit_sand): Promise<Uint8Array<ArrayBuffer>>;
         encryptable(): boolean;
         encrypted(next?: boolean): boolean;
-        secret(): $mol_crypto_sacred | null;
+        secret(): $mol_crypto2_secret | null;
         dump(): {
             land: $giper_baza_link;
             units: $giper_baza_unit_base[];
